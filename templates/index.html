@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AutoAnnotator v2.0 - High-performance facial landmark and yawn annotator interface.">
+    <title>AutoAnnotator v2.0</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CSS stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="background-glows">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+    </div>
+
+    <main class="dashboard-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <div>
+                    <h1>AutoAnnotator <span class="version-tag">v2.0</span></h1>
+                    <p class="subtitle">AI-Powered Face Landmark and Drowsiness Annotator</p>
+                </div>
+            </div>
+            <div class="status-badge" id="system-status">
+                <span class="status-dot green"></span>
+                <span class="status-text">System Idle</span>
+            </div>
+        </header>
+
+        <!-- Main Workspace Grid -->
+        <div class="workspace-grid">
+            <!-- Left Panel: Configuration -->
+            <section class="panel glass-card" aria-labelledby="config-heading">
+                <div class="panel-header">
+                    <i class="fa-solid fa-sliders icon-accent"></i>
+                    <h2 id="config-heading">Configuration</h2>
+                </div>
+                
+                <div class="config-form">
+                    <div class="form-group">
+                        <label for="image-folder-input">
+                            <i class="fa-solid fa-folder-open label-icon"></i>
+                            Image Directory Path
+                        </label>
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                id="image-folder-input" 
+                                name="image_folder" 
+                                placeholder="E.g. D:\CDAC\Venkat\nolight_dataset_awake4\images" 
+                                value="" 
+                            >
+                            <input type="file" id="image-folder-picker" webkitdirectory directory style="display: none;">
+                            <button type="button" class="btn-secondary browse-btn" onclick="document.getElementById('image-folder-picker').click()">
+                                <i class="fa-solid fa-folder-open"></i> Browse
+                            </button>
+                        </div>
+                        <span class="help-text">Absolute path to images on host (e.g. <code>D:\CDAC\Venkat\nolight_dataset_awake4\images</code>)</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="label-folder-input">
+                            <i class="fa-solid fa-file-invoice label-icon"></i>
+                            Save Directory Path
+                        </label>
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                id="label-folder-input" 
+                                name="label_folder" 
+                                placeholder="E.g. D:\CDAC\Venkat\nolight_dataset_awake4\labels" 
+                                value=""
+                            >
+                            <input type="file" id="label-folder-picker" webkitdirectory directory style="display: none;">
+                            <button type="button" class="btn-secondary browse-btn" onclick="document.getElementById('label-folder-picker').click()">
+                                <i class="fa-solid fa-folder-open"></i> Browse
+                            </button>
+                        </div>
+                        <span class="help-text">Absolute path to save labels. Leave empty to auto-create 'anno' sibling folder.</span>
+                    </div>
+
+                    <button type="button" id="run-btn" class="btn-primary">
+                        <span class="btn-text">Start Annotation</span>
+                        <i class="fa-solid fa-play btn-icon"></i>
+                    </button>
+                </div>
+
+                <!-- Statistics Widget -->
+                <div class="stats-widget">
+                    <h3>Session Metrics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-label">Total Images</span>
+                            <span class="stat-value" id="stat-total">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Processed</span>
+                            <span class="stat-value text-success" id="stat-processed">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Skipped</span>
+                            <span class="stat-value text-warning" id="stat-skipped">0</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Processing Console & Progress -->
+            <section class="panel glass-card console-panel" aria-labelledby="console-heading">
+                <div class="panel-header">
+                    <i class="fa-solid fa-terminal icon-accent"></i>
+                    <h2 id="console-heading">Execution Console</h2>
+                    <button id="clear-console-btn" class="btn-icon-only" title="Clear Console">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+
+                <!-- Progress Bar Section -->
+                <div class="progress-section">
+                    <div class="progress-info">
+                        <span id="status-message">Ready to initialize...</span>
+                        <span id="progress-percentage">0%</span>
+                    </div>
+                    <div class="progress-bar-container" id="progress-bar-container">
+                        <div class="progress-bar" id="progress-bar" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Terminal Console -->
+                <div class="console-box-wrapper">
+                    <div class="console-box" id="console-box">
+                        <div class="console-line system-line">[SYSTEM] AutoAnnotator engine initialized. Ready to execute pipeline.</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <p>Built with <i class="fa-solid fa-heart heart-pulse"></i> for Deep Learning Annotation Pipeline</p>
+    </footer>
+
+    <!-- JavaScript script -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

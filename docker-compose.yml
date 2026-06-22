@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  annotator:
+    build: .
+    image: auto-annotator:latest
+    container_name: auto-annotator
+    ports:
+      - "5001:5000"
+    volumes:
+      - "D:\\CDAC\\Venkat:/data"
