@@ -163,6 +163,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 appendLog(message, 'skip');
             } 
             else if (message.startsWith('SUCCESS:')) {
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
                 progressBar.style.width = '100%';
                 progressPercentage.innerText = '100%';
                 statusMessage.innerText = 'Annotation process complete!';

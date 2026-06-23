@@ -75,47 +75,46 @@ def process_image(path, face_mesh):
 
     labels = []
 
-    # ========= LEFT EYE =========
+    # ========= EYES (LEFT & RIGHT) =========
     left_eye_pts = [
         (
             int(landmarks[i].x * w),
             int(landmarks[i].y * h)
         ) for i in LEFT_EYE
     ]
-
     left_ear = eye_aspect_ratio(left_eye_pts)
-    left_class = EyesOpen if left_ear > 0.20 else EyesClose
 
-    left_indices = LEFT_EYE + LEFT_BROW
-    xmin, ymin, xmax, ymax = get_bbox(left_indices, landmarks, w, h)
-
-    # Expand the bottom of the eye bounding box by 25% of the eye box height
-    eye_height = ymax - ymin
-    ymax = min(h, ymax + int(eye_height * 0.25))
-
-    cx, cy, bw, bh = normalize_bbox(xmin, ymin, xmax, ymax, w, h)
-    labels.append(f"{left_class} {cx:.6f} {cy:.6f} {bw:.6f} {bh:.6f}")
-
-    # ========= RIGHT EYE =========
     right_eye_pts = [
         (
             int(landmarks[i].x * w),
             int(landmarks[i].y * h)
         ) for i in RIGHT_EYE
     ]
-
     right_ear = eye_aspect_ratio(right_eye_pts)
-    right_class = EyesOpen if right_ear > 0.20 else EyesClose
 
-    right_indices = RIGHT_EYE + RIGHT_BROW
-    xmin, ymin, xmax, ymax = get_bbox(right_indices, landmarks, w, h)
+    # Consistent classification: if either eye is open (even slightly, EAR > 0.15),
+    # then both eyes are classified as EyesOpen.
+    eye_threshold = 0.15
+    if left_ear > eye_threshold or right_ear > eye_threshold:
+        eyes_class = EyesOpen
+    else:
+        eyes_class = EyesClose
 
-    # Expand the bottom of the eye bounding box by 25% of the eye box height
+    # Left eye bounding box
+    left_indices = LEFT_EYE + LEFT_BROW
+    xmin, ymin, xmax, ymax = get_bbox(left_indices, landmarks, w, h)
     eye_height = ymax - ymin
     ymax = min(h, ymax + int(eye_height * 0.25))
-
     cx, cy, bw, bh = normalize_bbox(xmin, ymin, xmax, ymax, w, h)
-    labels.append(f"{right_class} {cx:.6f} {cy:.6f} {bw:.6f} {bh:.6f}")
+    labels.append(f"{eyes_class} {cx:.6f} {cy:.6f} {bw:.6f} {bh:.6f}")
+
+    # Right eye bounding box
+    right_indices = RIGHT_EYE + RIGHT_BROW
+    xmin, ymin, xmax, ymax = get_bbox(right_indices, landmarks, w, h)
+    eye_height = ymax - ymin
+    ymax = min(h, ymax + int(eye_height * 0.25))
+    cx, cy, bw, bh = normalize_bbox(xmin, ymin, xmax, ymax, w, h)
+    labels.append(f"{eyes_class} {cx:.6f} {cy:.6f} {bw:.6f} {bh:.6f}")
 
     # ========= MOUTH =========
     mouth_points = [
@@ -140,11 +139,8 @@ def process_image(path, face_mesh):
     # Get bounding box using inner landmarks (MOUTH) plus outer boundaries (0 for top lip, 17 for bottom lip)
     xmin, ymin, xmax, ymax = get_bbox(MOUTH + [0, 17], landmarks, w, h)
 
-    # Expand the top of the mouth bounding box to ensure upper lip coverage
-    mouth_height = ymax - ymin
-    ymin = max(0, ymin - int(mouth_height * 0.20))
-
-    padding = 10
+    # Tighten bounding box around lips: remove top expansion and reduce padding to 2 pixels
+    padding = 2
     xmin = max(0, xmin - padding)
     ymin = max(0, ymin - padding)
     xmax = min(w, xmax + padding)
@@ -164,8 +160,21 @@ def process_image(path, face_mesh):
     # Scale-invariant tilt indicator (forehead z relative to chin z, normalized by vertical size)
     pitch_metric = dz / dy if dy != 0 else 0
     
-    # Classify neck posture based on pitch angle (forward tilt)
-    neck_class = NeckDrooped if pitch_metric < -0.15 else NeckNormal
+    # Sideways tilt (roll) calculation using left eye (33) and right eye (263) outer corners
+    left_eye_lm = landmarks[33]
+    right_eye_lm = landmarks[263]
+    lex, ley = left_eye_lm.x * w, left_eye_lm.y * h
+    rex, rey = right_eye_lm.x * w, right_eye_lm.y * h
+    
+    dx = rex - lex
+    dy_eyes = rey - ley
+    roll_metric = abs(dy_eyes / dx) if dx != 0 else 0
+    
+    # Classify neck posture based on forward tilt (pitch) or sideways tilt (roll > ~20 degrees)
+    if pitch_metric < -0.15 or roll_metric > 0.36:
+        neck_class = NeckDrooped
+    else:
+        neck_class = NeckNormal
     
     # Get bounding box of all face landmarks to cover the head width and height
     all_xs = [lm.x for lm in landmarks]
@@ -181,8 +190,8 @@ def process_image(path, face_mesh):
     
     # Expand top by 35% of face height to cover the hair
     neck_ymin = max(0, neck_ymin - int(neck_height * 0.35))
-    # Expand bottom by 15% of face height to go slightly below the chin
-    neck_ymax = min(h, neck_ymax + int(neck_height * 0.15))
+    # Keep bottom at the bottom of the chin (no expansion to the neck)
+    neck_ymax = min(h, neck_ymax)
     # Add small horizontal padding to keep proportions clean
     neck_xmin = max(0, neck_xmin - int(neck_width * 0.05))
     neck_xmax = min(w, neck_xmax + int(neck_width * 0.05))

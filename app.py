@@ -102,6 +102,10 @@ def run():
             
             for log in run_annotation(translated_image_folder, translated_label_folder):
                 yield f"data: {json.dumps({'message': log})}\n\n"
+            
+            # Sleep to allow client to receive the success message and close the connection
+            import time
+            time.sleep(2)
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
             
