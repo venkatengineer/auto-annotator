@@ -8,4 +8,6 @@ services:
     ports:
       - "5001:5000"
     volumes:
-      - "D:\\CDAC\\Venkat:/data"
+      - "${HOST_DATA_DIR:-./data}:/data"
+    environment:
+      - HOST_DATA_DIR=${HOST_DATA_DIR:-./data}

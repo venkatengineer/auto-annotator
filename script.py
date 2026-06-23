@@ -268,7 +268,11 @@ def run_annotation(image_folder, label_folder):
 
 
 if __name__ == "__main__":
-    image_folder = os.environ.get("IMAGE_FOLDER", r"D:\CDAC\Venkat\nolight_dataset_awake4\images")
+    host_data_dir = os.environ.get("HOST_DATA_DIR", r"D:\CDAC\Venkat")
+    is_windows = '\\' in host_data_dir or (len(host_data_dir) > 1 and host_data_dir[1] == ':')
+    sep = '\\' if is_windows else '/'
+    default_image_folder = f"{host_data_dir}{sep}nolight_dataset_awake4{sep}images"
+    image_folder = os.environ.get("IMAGE_FOLDER", default_image_folder)
     label_folder = os.path.join(os.path.dirname(image_folder.rstrip(r"\/")), "anno")
     
     print(f"Starting auto-annotator CLI on {image_folder}...")

@@ -58,7 +58,7 @@
                                 type="text" 
                                 id="image-folder-input" 
                                 name="image_folder" 
-                                placeholder="E.g. D:\CDAC\Venkat\nolight_dataset_awake4\images" 
+                                placeholder="E.g. {{ example_img }}" 
                                 value="" 
                             >
                             <input type="file" id="image-folder-picker" webkitdirectory directory style="display: none;">
@@ -66,7 +66,7 @@
                                 <i class="fa-solid fa-folder-open"></i> Browse
                             </button>
                         </div>
-                        <span class="help-text">Absolute path to images on host (e.g. <code>D:\CDAC\Venkat\nolight_dataset_awake4\images</code>)</span>
+                        <span class="help-text">Absolute path to images on host (e.g. <code>{{ example_img }}</code>)</span>
                     </div>
 
                     <div class="form-group">
@@ -79,7 +79,7 @@
                                 type="text" 
                                 id="label-folder-input" 
                                 name="label_folder" 
-                                placeholder="E.g. D:\CDAC\Venkat\nolight_dataset_awake4\labels" 
+                                placeholder="E.g. {{ example_lbl }}" 
                                 value=""
                             >
                             <input type="file" id="label-folder-picker" webkitdirectory directory style="display: none;">
@@ -87,7 +87,7 @@
                                 <i class="fa-solid fa-folder-open"></i> Browse
                             </button>
                         </div>
-                        <span class="help-text">Absolute path to save labels. Leave empty to auto-create 'anno' sibling folder.</span>
+                        <span class="help-text">Absolute path to save labels (e.g. <code>{{ example_lbl }}</code>). Leave empty to auto-create 'anno' sibling folder.</span>
                     </div>
 
                     <button type="button" id="run-btn" class="btn-primary">

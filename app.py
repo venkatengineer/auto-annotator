@@ -10,7 +10,7 @@ def translate_path(path):
         return path
     # Normalize slashes for uniform comparison
     norm_path = path.replace('\\', '/')
-    host_prefix = "D:/CDAC/Venkat"
+    host_prefix = os.environ.get('HOST_DATA_DIR', 'D:/CDAC/Venkat').replace('\\', '/')
     if norm_path.lower().startswith(host_prefix.lower()):
         relative_part = norm_path[len(host_prefix):].lstrip('/')
         translated = os.path.join('/data', relative_part)
@@ -23,8 +23,14 @@ def to_host_path(container_path):
     norm_path = os.path.normpath(container_path).replace('\\', '/')
     if norm_path == '/data' or norm_path.startswith('/data/'):
         relative_part = norm_path[len('/data'):].lstrip('/')
-        host_path = os.path.join('D:\\CDAC\\Venkat', relative_part.replace('/', '\\'))
-        return host_path
+        host_prefix = os.environ.get('HOST_DATA_DIR', 'D:\\CDAC\\Venkat')
+        # Check if the host prefix uses backslashes or drive letter
+        if '\\' in host_prefix or (len(host_prefix) > 1 and host_prefix[1] == ':'):
+            host_path = os.path.join(host_prefix, relative_part.replace('/', '\\'))
+            return host_path.replace('/', '\\')
+        else:
+            host_path = os.path.join(host_prefix, relative_part)
+            return host_path.replace('\\', '/')
     return container_path
 
 @app.route('/api/resolve_folder')
@@ -61,12 +67,18 @@ def api_resolve_folder():
             'host_path': host_path
         })
         
-    return jsonify({'error': 'Could not resolve path. Make sure the folder is under D:\\CDAC\\Venkat.'}), 404
+    host_prefix = os.environ.get('HOST_DATA_DIR', 'D:\\CDAC\\Venkat')
+    return jsonify({'error': f'Could not resolve path. Make sure the folder is under {host_prefix}.'}), 404
 
 @app.route('/')
 def index():
     # Render main dashboard page
-    return render_template('index.html')
+    host_data_dir = os.environ.get('HOST_DATA_DIR', 'D:\\CDAC\\Venkat')
+    is_windows = '\\' in host_data_dir or (len(host_data_dir) > 1 and host_data_dir[1] == ':')
+    sep = '\\' if is_windows else '/'
+    example_img = f"{host_data_dir}{sep}nolight_dataset_awake4{sep}images"
+    example_lbl = f"{host_data_dir}{sep}nolight_dataset_awake4{sep}labels"
+    return render_template('index.html', host_data_dir=host_data_dir, example_img=example_img, example_lbl=example_lbl)
 
 @app.route('/run')
 def run():
